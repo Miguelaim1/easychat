@@ -1,19 +1,3 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-function containsTutorQuestion(text) {
-  if (!text) return false;
-
-  return (
-    text.includes("?") ||
-    /\b(what|where|when|why|how|who|which)\b/i.test(text) ||
-    /\b(do you|did you|are you|can you|could you|would you|will you|have you|have you ever)\b/i.test(text)
-  );
-}
-
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
@@ -26,13 +10,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No message provided" });
     }
 
-    // Count assistant turns so we can control question frequency.
-    // +1 means the reply we are about to generate.
+    // Count assistant turns so we can control how often the tutor asks questions
     const assistantTurnCount =
       history.filter((m) => m.role === "assistant").length + 1;
 
-    // Tutor can ask a question only every 5th assistant turn.
-    // Change 5 to 6 or 7 if you want even fewer questions.
+    // Tutor can ask a question only every 5th assistant turn
+    // Change 5 to 6 or 7 for fewer questions
     const allowTutorQuestion = assistantTurnCount % 5 === 0;
 
     const systemPrompt = `
@@ -79,18 +62,48 @@ Use CEFR A2-B1 English.
 Keep replies short: 2-4 sentences.
 `;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history,
-        { role: "user", content: message },
-      ],
-      temperature: 0.8,
-      max_tokens: 180,
+    // Clean the history so only valid OpenAI message roles are sent
+    const cleanHistory = history
+      .filter(
+        (m) =>
+          m &&
+          typeof m.content === "string" &&
+          ["user", "assistant"].includes(m.role)
+      )
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...cleanHistory,
+          { role: "user", content: message },
+        ],
+        temperature: 0.8,
+        max_tokens: 180,
+      }),
     });
 
-    let reply = completion.choices[0]?.message?.content?.trim();
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("OpenAI API error:", data);
+      return res.status(500).json({
+        error: "OpenAI API error",
+        details: data,
+      });
+    }
+
+    let reply = data.choices?.[0]?.message?.content?.trim();
 
     if (!reply) {
       return res.status(500).json({
@@ -98,16 +111,24 @@ Keep replies short: 2-4 sentences.
       });
     }
 
-    // Hard guard:
     // If this is a no-question turn but the tutor still asks a question,
-    // rewrite the reply.
-    if (!allowTutorQuestion && containsTutorQuestion(reply)) {
-      const rewriteCompletion = await openai.chat.completions.create({
-        model: "gpt-4.1-mini",
-        messages: [
+    // rewrite the reply once.
+    if (!allowTutorQuestion && containsQuestion(reply)) {
+      try {
+        const rewriteResponse = await fetch(
+          "https://api.openai.com/v1/chat/completions",
           {
-            role: "system",
-            content: `
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content: `
 Rewrite the tutor reply so it contains no questions.
 
 Rules:
@@ -119,17 +140,33 @@ Rules:
 - Keep it short and natural.
 - Use CEFR A2-B1 English.
 `,
-          },
-          {
-            role: "user",
-            content: reply,
-          },
-        ],
-        temperature: 0.4,
-        max_tokens: 120,
-      });
+                },
+                {
+                  role: "user",
+                  content: reply,
+                },
+              ],
+              temperature: 0.3,
+              max_tokens: 120,
+            }),
+          }
+        );
 
-      reply = rewriteCompletion.choices[0]?.message?.content?.trim() || reply;
+        const rewriteData = await rewriteResponse.json();
+
+        if (rewriteResponse.ok) {
+          const rewrittenReply =
+            rewriteData.choices?.[0]?.message?.content?.trim();
+
+          if (rewrittenReply) {
+            reply = rewrittenReply;
+          }
+        } else {
+          console.error("Rewrite API error:", rewriteData);
+        }
+      } catch (rewriteError) {
+        console.error("Rewrite failed:", rewriteError);
+      }
     }
 
     return res.status(200).json({ reply });
@@ -141,4 +178,16 @@ Rules:
       details: error.message,
     });
   }
+}
+
+function containsQuestion(text) {
+  if (!text) return false;
+
+  return (
+    text.includes("?") ||
+    /\b(what|where|when|why|how|who|which)\b/i.test(text) ||
+    /\b(do you|did you|are you|can you|could you|would you|will you|have you)\b/i.test(
+      text
+    )
+  );
 }
