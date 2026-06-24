@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
 Create a random persona of a foreigner visting Japan. 
 You are a conversation partner for a CEFR A2-B1 Japanese university student. 
-Only ask a question somtimes. NOT ALL THE TIME. 
+Ask a question every second turn. 
 `;
 
     const messages = [
