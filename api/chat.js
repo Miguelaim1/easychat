@@ -10,59 +10,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No message provided" });
     }
 
-    // Count assistant turns so we can control how often the tutor asks questions
-    const assistantTurnCount =
-      history.filter((m) => m.role === "assistant").length + 1;
-
-    // Tutor can ask a question only every 5th assistant turn
-    // Change 5 to 6 or 7 for fewer questions
-    const allowTutorQuestion = assistantTurnCount % 5 === 0;
-
-    const systemPrompt = `
-You are a friendly English conversation partner for a CEFR A2-B1 Japanese university student.
-
-Create a random persona of a foreigner visiting Japan.
-Keep the same persona throughout the conversation.
-
-MAIN GOAL:
-Help the student practice natural everyday English conversation.
-
-The student should practice taking initiative.
-This means the student should sometimes ask you questions first.
-
-IMPORTANT:
-The student is allowed to ask questions.
-If the student asks you a question, answer it naturally.
-
-The question limit applies only to YOU, the tutor.
-It does NOT apply to the student.
-
-TURN RULE:
-${
-  allowTutorQuestion
-    ? "This turn, you may ask ONE short follow-up question if it feels natural."
-    : "This turn, you must NOT ask the student a question. Do not ask anything. Answer, react, or share a short personal comment. End with a statement."
-}
-
-When you are not allowed to ask a question:
-- answer the student's question if they asked one,
-- react naturally,
-- share a short personal comment,
-- add one small detail about your persona,
-- leave space for the student to continue.
-
-Do not say "Please try again" unless the student's message is impossible to understand.
-
-If the student's English has a small mistake:
-- answer naturally first,
-- then give a very short correction only if useful.
-
-Keep your English simple and natural.
-Use CEFR A2-B1 English.
-Keep replies short: 2-4 sentences.
-`;
-
-    // Clean the history so only valid OpenAI message roles are sent
     const cleanHistory = history
       .filter(
         (m) =>
@@ -74,6 +21,53 @@ Keep replies short: 2-4 sentences.
         role: m.role,
         content: m.content,
       }));
+
+    const assistantTurnCount =
+      cleanHistory.filter((m) => m.role === "assistant").length + 1;
+
+    // Tutor asks a question only every 5th tutor turn.
+    // Change 5 to 6 or 7 for even fewer questions.
+    const allowTutorQuestion = assistantTurnCount % 5 === 0;
+
+    const systemPrompt = `
+You are the TUTOR.
+
+The user is the STUDENT.
+
+You are a friendly English conversation partner for a CEFR A2-B1 Japanese university student.
+
+Create a simple persona for yourself:
+- You are a foreigner visiting Japan.
+- Choose one name, one country, and one reason for visiting Japan.
+- Keep the same persona throughout the conversation.
+
+Very important role rules:
+- Do not speak as the student.
+- Do not guess the student's name.
+- Do not say the student is visiting Japan.
+- You are the foreigner visiting Japan.
+- The student is a Japanese university student practicing English.
+
+Conversation goal:
+The student should practice taking initiative.
+This means the student should sometimes ask you questions first.
+
+The student is allowed to ask questions.
+If the student asks you a question, answer it naturally.
+
+Question rule:
+${
+  allowTutorQuestion
+    ? "This turn, you may ask ONE short question if it feels natural."
+    : "This turn, you must NOT ask the student a question. Answer, react, or share a short personal comment. End with a statement."
+}
+
+Do not say "Please try again" unless the student's message is impossible to understand.
+
+Keep replies short.
+Use simple CEFR A2-B1 English.
+Use 1 to 3 short sentences.
+`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -88,8 +82,8 @@ Keep replies short: 2-4 sentences.
           ...cleanHistory,
           { role: "user", content: message },
         ],
-        temperature: 0.8,
-        max_tokens: 180,
+        temperature: 0.7,
+        max_tokens: 120,
       }),
     });
 
@@ -111,65 +105,25 @@ Keep replies short: 2-4 sentences.
       });
     }
 
-    // If this is a no-question turn but the tutor still asks a question,
-    // rewrite the reply once.
-    if (!allowTutorQuestion && containsQuestion(reply)) {
-      try {
-        const rewriteResponse = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content: `
-Rewrite the tutor reply so it contains no questions.
-
-Rules:
-- Do not ask the student anything.
-- Do not use a question mark.
-- Keep the same basic meaning.
-- Answer the student naturally if they asked a question.
-- End with a statement.
-- Keep it short and natural.
-- Use CEFR A2-B1 English.
-`,
-                },
-                {
-                  role: "user",
-                  content: reply,
-                },
-              ],
-              temperature: 0.3,
-              max_tokens: 120,
-            }),
-          }
-        );
-
-        const rewriteData = await rewriteResponse.json();
-
-        if (rewriteResponse.ok) {
-          const rewrittenReply =
-            rewriteData.choices?.[0]?.message?.content?.trim();
-
-          if (rewrittenReply) {
-            reply = rewrittenReply;
-          }
-        } else {
-          console.error("Rewrite API error:", rewriteData);
-        }
-      } catch (rewriteError) {
-        console.error("Rewrite failed:", rewriteError);
-      }
+    // Simple hard guard:
+    // On no-question turns, remove any sentence that contains a question mark.
+    // This avoids the weird second AI rewrite problem.
+    if (!allowTutorQuestion) {
+      reply = removeQuestionSentences(reply);
     }
 
-    return res.status(200).json({ reply });
+    // Backup in case removing question sentences deleted everything.
+    if (!reply || reply.trim().length < 2) {
+      reply = "That sounds interesting. I have had a similar experience in Japan.";
+    }
+
+    // Return several names so your front end / text-to-voice code can find it.
+    return res.status(200).json({
+      reply,
+      response: reply,
+      message: reply,
+      text: reply,
+    });
   } catch (error) {
     console.error("Chat API error:", error);
 
@@ -180,14 +134,10 @@ Rules:
   }
 }
 
-function containsQuestion(text) {
-  if (!text) return false;
-
-  return (
-    text.includes("?") ||
-    /\b(what|where|when|why|how|who|which)\b/i.test(text) ||
-    /\b(do you|did you|are you|can you|could you|would you|will you|have you)\b/i.test(
-      text
-    )
-  );
+function removeQuestionSentences(text) {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => !sentence.includes("?"))
+    .join(" ")
+    .trim();
 }
