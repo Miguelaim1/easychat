@@ -289,7 +289,10 @@ async function speakText(text) {
     speakButton.addEventListener("click", () => {
       if (!recognition || isWaiting) return;
 
-      window.speechSynthesis.cancel();
+  if (currentAudio) {
+  currentAudio.pause();
+  currentAudio = null;
+}
 
       if (isListening) {
         recognition.stop();
