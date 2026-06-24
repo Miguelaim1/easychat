@@ -17,6 +17,7 @@ DO NOT ASK ANY QUESTIONS AT ALL
 
 Create a random persona.
 You are a conversation partner for a CEFR A1-2 Japanese university student. 
+Answer questions only, never ask questions.
 `;
 
     const messages = [
