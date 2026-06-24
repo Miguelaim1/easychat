@@ -3,298 +3,176 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>English Conversation Chatbot</title>
+  <title>Unit 4 English Tutor</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f7fb;
+      background: #ffffff;
+      color: #111;
       margin: 0;
       padding: 0;
-      color: #222;
+      text-align: center;
     }
 
-    .app {
+    .container {
       max-width: 760px;
-      margin: 0 auto;
-      padding: 20px;
+      margin: 40px auto;
+      padding: 0 20px;
     }
 
     h1 {
-      text-align: center;
-      font-size: 26px;
-      margin-bottom: 10px;
+      font-size: 32px;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
     }
 
     .subtitle {
-      text-align: center;
-      color: #666;
+      font-size: 16px;
+      color: #333;
       margin-bottom: 20px;
     }
 
-    .chat-box {
-      background: white;
-      border-radius: 16px;
-      padding: 16px;
-      height: 520px;
+    #chatBox {
+      width: 100%;
+      height: 320px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      text-align: left;
+      padding: 28px 18px;
+      box-sizing: border-box;
       overflow-y: auto;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      line-height: 1.6;
     }
 
     .message {
       margin-bottom: 14px;
-      line-height: 1.5;
     }
 
-    .label {
+    .tutor-label {
+      color: green;
       font-weight: bold;
-      margin-bottom: 4px;
     }
 
-    .student .label {
-      color: #2563eb;
+    .you-label {
+      color: #1d4ed8;
+      font-weight: bold;
     }
 
-    .tutor .label {
-      color: #16a34a;
-    }
-
-    .bubble {
-      padding: 10px 12px;
-      border-radius: 12px;
-      display: inline-block;
-      max-width: 90%;
-      white-space: pre-wrap;
-    }
-
-    .student .bubble {
-      background: #dbeafe;
-    }
-
-    .tutor .bubble {
-      background: #dcfce7;
-    }
-
-    .controls {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
+    #speakButton {
+      font-size: 18px;
+      padding: 16px 28px;
       border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 12px 14px;
-      border: none;
       border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      font-size: 15px;
+      background: white;
       cursor: pointer;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    #speakButton:hover {
+      background: #f5f5f5;
     }
 
-    button:disabled {
-      background: #aaa;
+    #speakButton:disabled {
+      opacity: 0.6;
       cursor: not-allowed;
     }
 
-    .secondary {
-      background: #4b5563;
-    }
-
-    .secondary:hover {
-      background: #374151;
-    }
-
-    .danger {
-      background: #dc2626;
-    }
-
-    .danger:hover {
-      background: #b91c1c;
-    }
-
-    .settings {
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-      margin-bottom: 12px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    select {
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      max-width: 260px;
-    }
-
-    .status {
-      color: #666;
+    #status {
+      margin-top: 16px;
       font-size: 14px;
+      color: #444;
       min-height: 20px;
-      margin-top: 8px;
-    }
-
-    .small {
-      font-size: 13px;
-      color: #777;
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <h1>English Conversation Chatbot</h1>
-    <div class="subtitle">Practice natural everyday English conversation</div>
+  <div class="container">
+    <h1>Unit 4 English Tutor 🎧</h1>
+    <div class="subtitle">Tap the microphone and speak in English.</div>
 
-    <div class="settings">
-      <button id="enableVoiceBtn" class="secondary">Enable Voice</button>
-
-      <label>
-        Voice:
-        <select id="voiceSelect">
-          <option value="">Loading voices...</option>
-        </select>
-      </label>
-
-      <button id="stopVoiceBtn" class="danger">Stop Voice</button>
-      <span class="small">Click “Enable Voice” once if sound does not play.</span>
-    </div>
-
-    <div id="chatBox" class="chat-box">
-      <div class="message tutor">
-        <div class="label">Tutor:</div>
-        <div class="bubble">Hi! Let's practice English together 🥳</div>
+    <div id="chatBox">
+      <div class="message">
+        <span class="tutor-label">Tutor:</span>
+        Hi. Let's talk about traveling!
       </div>
     </div>
 
-    <div class="controls">
-      <input
-        id="userInput"
-        type="text"
-        placeholder="Type your message..."
-        autocomplete="off"
-      />
-      <button id="sendBtn">Send</button>
-      <button id="micBtn" class="secondary">🎤</button>
-    </div>
+    <button id="speakButton">🎤 Tap to speak</button>
 
-    <div id="status" class="status"></div>
+    <div id="status">Ready.</div>
   </div>
 
   <script>
     const chatBox = document.getElementById("chatBox");
-    const userInput = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const micBtn = document.getElementById("micBtn");
+    const speakButton = document.getElementById("speakButton");
     const statusDiv = document.getElementById("status");
-    const voiceSelect = document.getElementById("voiceSelect");
-    const enableVoiceBtn = document.getElementById("enableVoiceBtn");
-    const stopVoiceBtn = document.getElementById("stopVoiceBtn");
 
     let history = [];
-    let isSending = false;
+    let recognition = null;
+    let isListening = false;
+    let isWaiting = false;
     let voices = [];
-    let voiceEnabled = false;
-
-    function addMessage(role, text) {
-      const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${role === "user" ? "student" : "tutor"}`;
-
-      const labelDiv = document.createElement("div");
-      labelDiv.className = "label";
-      labelDiv.textContent = role === "user" ? "You:" : "Tutor:";
-
-      const bubbleDiv = document.createElement("div");
-      bubbleDiv.className = "bubble";
-      bubbleDiv.textContent = text;
-
-      messageDiv.appendChild(labelDiv);
-      messageDiv.appendChild(bubbleDiv);
-
-      chatBox.appendChild(messageDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
 
     function setStatus(text) {
-      statusDiv.textContent = text || "";
+      statusDiv.textContent = text;
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = "message";
+
+      const label = document.createElement("span");
+      label.className = role === "user" ? "you-label" : "tutor-label";
+      label.textContent = role === "user" ? "You: " : "Tutor: ";
+
+      const content = document.createElement("span");
+      content.textContent = text;
+
+      div.appendChild(label);
+      div.appendChild(content);
+
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function loadVoices() {
       voices = window.speechSynthesis.getVoices();
-
-      voiceSelect.innerHTML = "";
-
-      if (!voices.length) {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "No voices found";
-        voiceSelect.appendChild(option);
-        return;
-      }
-
-      const englishVoices = voices.filter((voice) =>
-        voice.lang.toLowerCase().startsWith("en")
-      );
-
-      const voiceList = englishVoices.length ? englishVoices : voices;
-
-      voiceList.forEach((voice, index) => {
-        const option = document.createElement("option");
-        option.value = voice.name;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
-
-        const lowerName = voice.name.toLowerCase();
-
-        if (
-          lowerName.includes("samantha") ||
-          lowerName.includes("zira") ||
-          lowerName.includes("google us english") ||
-          lowerName.includes("english")
-        ) {
-          option.selected = true;
-        }
-      });
     }
 
     if ("speechSynthesis" in window) {
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
-    } else {
-      setStatus("Text-to-speech is not supported in this browser.");
     }
 
     function speakText(text) {
-      if (!text) return;
-      if (!("speechSynthesis" in window)) return;
+      if (!text || !("speechSynthesis" in window)) return;
 
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
 
-      const selectedVoiceName = voiceSelect.value;
-      const selectedVoice = voices.find((voice) => voice.name === selectedVoiceName);
+      const englishVoices = voices.filter((voice) =>
+        voice.lang.toLowerCase().startsWith("en")
+      );
 
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
+      const preferredVoice =
+        englishVoices.find((voice) =>
+          voice.name.toLowerCase().includes("google")
+        ) ||
+        englishVoices.find((voice) =>
+          voice.name.toLowerCase().includes("samantha")
+        ) ||
+        englishVoices.find((voice) =>
+          voice.name.toLowerCase().includes("zira")
+        ) ||
+        englishVoices[0];
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+        utterance.lang = preferredVoice.lang;
       } else {
         utterance.lang = "en-US";
       }
@@ -307,61 +185,24 @@
       };
 
       utterance.onend = () => {
-        setStatus("");
+        setStatus("Ready.");
       };
 
-      utterance.onerror = (event) => {
-        console.error("Speech error:", event);
-        setStatus("Voice error. Try clicking Enable Voice again.");
+      utterance.onerror = () => {
+        setStatus("Voice error.");
       };
 
       window.speechSynthesis.speak(utterance);
     }
 
-    enableVoiceBtn.addEventListener("click", () => {
-      voiceEnabled = true;
+    async function sendMessage(userMessage) {
+      if (!userMessage || isWaiting) return;
 
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-
-        const testUtterance = new SpeechSynthesisUtterance("Voice is ready.");
-        testUtterance.rate = 0.9;
-        testUtterance.pitch = 1;
-
-        const selectedVoiceName = voiceSelect.value;
-        const selectedVoice = voices.find((voice) => voice.name === selectedVoiceName);
-
-        if (selectedVoice) {
-          testUtterance.voice = selectedVoice;
-          testUtterance.lang = selectedVoice.lang;
-        } else {
-          testUtterance.lang = "en-US";
-        }
-
-        window.speechSynthesis.speak(testUtterance);
-        setStatus("Voice enabled.");
-      }
-    });
-
-    stopVoiceBtn.addEventListener("click", () => {
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        setStatus("Voice stopped.");
-      }
-    });
-
-    async function sendMessage() {
-      const message = userInput.value.trim();
-
-      if (!message || isSending) return;
-
-      isSending = true;
-      sendBtn.disabled = true;
-      micBtn.disabled = true;
-
-      addMessage("user", message);
-      userInput.value = "";
+      isWaiting = true;
+      speakButton.disabled = true;
       setStatus("Tutor is thinking...");
+
+      addMessage("user", userMessage);
 
       try {
         const response = await fetch("/api/chat", {
@@ -371,14 +212,13 @@
           },
           body: JSON.stringify({
             history,
-            message,
+            message: userMessage,
           }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          console.error("API error:", data);
           throw new Error(data.error || "API error");
         }
 
@@ -390,36 +230,19 @@
 
         addMessage("assistant", reply);
 
-        history.push({ role: "user", content: message });
+        history.push({ role: "user", content: userMessage });
         history.push({ role: "assistant", content: reply });
 
-        if (voiceEnabled) {
-          speakText(reply);
-        } else {
-          setStatus("Tip: Click Enable Voice if you want sound.");
-        }
+        speakText(reply);
       } catch (error) {
         console.error(error);
         addMessage("assistant", "Sorry, something went wrong.");
-        setStatus("Error: " + error.message);
+        setStatus("Error.");
       } finally {
-        isSending = false;
-        sendBtn.disabled = false;
-        micBtn.disabled = false;
-        userInput.focus();
+        isWaiting = false;
+        speakButton.disabled = false;
       }
     }
-
-    sendBtn.addEventListener("click", sendMessage);
-
-    userInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        sendMessage();
-      }
-    });
-
-    let recognition = null;
-    let isListening = false;
 
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition =
@@ -432,17 +255,16 @@
 
       recognition.onstart = () => {
         isListening = true;
-        micBtn.textContent = "🛑";
+        speakButton.textContent = "🛑 Listening...";
         setStatus("Listening...");
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        userInput.value = transcript;
-        setStatus("Heard: " + transcript);
+        setStatus("You said: " + transcript);
 
         setTimeout(() => {
-          sendMessage();
+          sendMessage(transcript);
         }, 300);
       };
 
@@ -453,26 +275,25 @@
 
       recognition.onend = () => {
         isListening = false;
-        micBtn.textContent = "🎤";
+        speakButton.textContent = "🎤 Tap to speak";
       };
     } else {
-      micBtn.disabled = true;
-      micBtn.textContent = "No Mic";
+      speakButton.disabled = true;
+      speakButton.textContent = "Mic not supported";
       setStatus("Speech recognition is not supported in this browser.");
     }
 
-    micBtn.addEventListener("click", () => {
-      if (!recognition) return;
+    speakButton.addEventListener("click", () => {
+      if (!recognition || isWaiting) return;
+
+      window.speechSynthesis.cancel();
 
       if (isListening) {
         recognition.stop();
       } else {
-        voiceEnabled = true;
         recognition.start();
       }
     });
-
-    userInput.focus();
   </script>
 </body>
 </html>
