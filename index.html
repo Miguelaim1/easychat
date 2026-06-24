@@ -247,59 +247,128 @@ async function speakText(text) {
       }
     }
 
-    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
 
-      recognition = new SpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.interimResults = false;
-      recognition.continuous = false;
+let finalTranscript = "";
+let latestTranscript = "";
+let silenceTimer = null;
+let hasSubmittedSpeech = false;
 
-      recognition.onstart = () => {
-        isListening = true;
-        speakButton.textContent = "🛑 Listening...";
-        setStatus("Listening...");
-      };
+// Change this number to control how long it waits after the student stops speaking.
+// 2000 = 2 seconds
+// 3000 = 3 seconds
+const SPEECH_END_DELAY = 2500;
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setStatus("You said: " + transcript);
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-        setTimeout(() => {
-          sendMessage(transcript);
-        }, 300);
-      };
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = true;
+  recognition.continuous = true;
 
-      recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event);
-        setStatus("Microphone error: " + event.error);
-      };
+  recognition.onstart = () => {
+    isListening = true;
+    finalTranscript = "";
+    latestTranscript = "";
+    hasSubmittedSpeech = false;
 
-      recognition.onend = () => {
-        isListening = false;
-        speakButton.textContent = "🎤 Tap to speak";
-      };
-    } else {
-      speakButton.disabled = true;
-      speakButton.textContent = "Mic not supported";
-      setStatus("Speech recognition is not supported in this browser.");
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
     }
 
-    speakButton.addEventListener("click", () => {
-      if (!recognition || isWaiting) return;
+    speakButton.textContent = "🛑 Listening...";
+    setStatus("Listening...");
+  };
 
-  if (currentAudio) {
-  currentAudio.pause();
-  currentAudio = null;
+  recognition.onresult = (event) => {
+    let interimTranscript = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript + " ";
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+
+    latestTranscript = (finalTranscript + interimTranscript).trim();
+
+    if (latestTranscript) {
+      setStatus("Heard: " + latestTranscript);
+    }
+
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+    }
+
+    silenceTimer = setTimeout(() => {
+      finishListeningAndSend();
+    }, SPEECH_END_DELAY);
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event);
+    setStatus("Microphone error: " + event.error);
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    speakButton.textContent = "🎤 Tap to speak";
+
+    // If the browser stops recognition by itself, still send the speech.
+    if (!hasSubmittedSpeech && latestTranscript.trim()) {
+      finishListeningAndSend();
+    } else if (!latestTranscript.trim() && !isWaiting) {
+      setStatus("Ready.");
+    }
+  };
+} else {
+  speakButton.disabled = true;
+  speakButton.textContent = "Mic not supported";
+  setStatus("Speech recognition is not supported in this browser.");
 }
 
-      if (isListening) {
-        recognition.stop();
-      } else {
-        recognition.start();
-      }
-    });
+function finishListeningAndSend() {
+  const transcriptToSend = latestTranscript.trim();
+
+  if (!transcriptToSend || hasSubmittedSpeech || isWaiting) return;
+
+  hasSubmittedSpeech = true;
+
+  if (silenceTimer) {
+    clearTimeout(silenceTimer);
+  }
+
+  if (recognition && isListening) {
+    recognition.stop();
+  }
+
+  setStatus("You said: " + transcriptToSend);
+
+  setTimeout(() => {
+    sendMessage(transcriptToSend);
+  }, 300);
+}
+
+speakButton.addEventListener("click", () => {
+  if (!recognition || isWaiting) return;
+
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+
+  if (isListening) {
+    finishListeningAndSend();
+  } else {
+    recognition.start();
+  }
+});
   </script>
 </body>
 </html>
