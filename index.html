@@ -90,7 +90,7 @@
 
 <body>
   <div class="container">
-    <h1>Unit 4 English Tutor 🎧</h1>
+    <h1>Let's practice English 🎧</h1>
     <div class="subtitle">Tap the microphone and speak in English.</div>
 
     <div id="chatBox">
@@ -147,53 +147,56 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    function speakText(text) {
-      if (!text || !("speechSynthesis" in window)) return;
+let currentAudio = null;
 
-      window.speechSynthesis.cancel();
+async function speakText(text) {
+  if (!text) return;
 
-      const utterance = new SpeechSynthesisUtterance(text);
+  try {
+    setStatus("Creating voice...");
 
-      const englishVoices = voices.filter((voice) =>
-        voice.lang.toLowerCase().startsWith("en")
-      );
-
-      const preferredVoice =
-        englishVoices.find((voice) =>
-          voice.name.toLowerCase().includes("google")
-        ) ||
-        englishVoices.find((voice) =>
-          voice.name.toLowerCase().includes("samantha")
-        ) ||
-        englishVoices.find((voice) =>
-          voice.name.toLowerCase().includes("zira")
-        ) ||
-        englishVoices[0];
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-        utterance.lang = preferredVoice.lang;
-      } else {
-        utterance.lang = "en-US";
-      }
-
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-
-      utterance.onstart = () => {
-        setStatus("Speaking...");
-      };
-
-      utterance.onend = () => {
-        setStatus("Ready.");
-      };
-
-      utterance.onerror = () => {
-        setStatus("Voice error.");
-      };
-
-      window.speechSynthesis.speak(utterance);
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
     }
+
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      throw new Error("TTS request failed");
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    currentAudio = new Audio(audioUrl);
+
+    currentAudio.onplay = () => {
+      setStatus("Speaking...");
+    };
+
+    currentAudio.onended = () => {
+      setStatus("Ready.");
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    currentAudio.onerror = () => {
+      setStatus("Audio playback error.");
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    await currentAudio.play();
+  } catch (error) {
+    console.error("TTS error:", error);
+    setStatus("Voice error.");
+  }
+}
 
     async function sendMessage(userMessage) {
       if (!userMessage || isWaiting) return;
