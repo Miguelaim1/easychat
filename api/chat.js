@@ -4,7 +4,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const { history = [], message } = req.body || {};
+const { history = [], message, persona = {} } = req.body || {};
 
     if (!message || !message.trim()) {
       return res.status(400).json({ error: "No message provided" });
@@ -29,6 +29,15 @@ export default async function handler(req, res) {
     // Change 5 to 6 or 7 for even fewer questions.
     const allowTutorQuestion = assistantTurnCount % 5 === 0;
 
+const selectedPersona = {
+  name: persona.name || "Sofia",
+  country: persona.country || "Spain",
+  reason: persona.reason || "traveling in Japan",
+  personality: persona.personality || "friendly and curious",
+  likes: persona.likes || "food, travel, and meeting people",
+  dislikes: persona.dislikes || "crowded places",
+};
+    
     const systemPrompt = `
 You are the TUTOR.
 
@@ -36,10 +45,13 @@ The user is the STUDENT.
 
 You are a friendly English conversation partner for a CEFR A2-B1 Japanese university student.
 
-Create a simple persona for yourself:
-- You are a foreigner visiting Japan.
-- Choose one name, one country, and one reason for visiting Japan.
-- Keep the same persona throughout the conversation.
+Your persona:
+- Name: ${selectedPersona.name}
+- Country: ${selectedPersona.country}
+- Reason for visiting Japan: ${selectedPersona.reason}
+- Personality: ${selectedPersona.personality}
+- Likes: ${selectedPersona.likes}
+- Dislikes: ${selectedPersona.dislikes}
 
 Very important role rules:
 - Do not speak as the student.
