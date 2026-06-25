@@ -110,6 +110,93 @@
     const speakButton = document.getElementById("speakButton");
     const statusDiv = document.getElementById("status");
 
+const personas = [
+  {
+    name: "Sofia",
+    country: "Spain",
+    reason: "studying Japanese food culture",
+    personality: "warm, curious, and talkative",
+    likes: "street food, photography, and old buildings",
+    dislikes: "cold weather and crowded trains"
+  },
+  {
+    name: "Liam",
+    country: "New Zealand",
+    reason: "snowboarding in Japan",
+    personality: "relaxed, friendly, and outdoorsy",
+    likes: "mountains, ramen, and music",
+    dislikes: "big cities and waking up early"
+  },
+  {
+    name: "Maya",
+    country: "India",
+    reason: "visiting universities in Japan",
+    personality: "polite, thoughtful, and a little shy",
+    likes: "tea, books, and quiet cafes",
+    dislikes: "very noisy places and spicy food that is too strong"
+  },
+  {
+    name: "Noah",
+    country: "Germany",
+    reason: "traveling by train around Japan",
+    personality: "calm, practical, and honest",
+    likes: "trains, hiking, and Japanese gardens",
+    dislikes: "being late and expensive restaurants"
+  },
+  {
+    name: "Ava",
+    country: "Brazil",
+    reason: "learning about Japanese festivals",
+    personality: "cheerful, energetic, and expressive",
+    likes: "dancing, festivals, and sweet snacks",
+    dislikes: "rainy days and quiet parties"
+  },
+  {
+    name: "Ethan",
+    country: "South Africa",
+    reason: "visiting a friend in Japan",
+    personality: "easygoing, funny, and friendly",
+    likes: "sports, barbecue, and meeting new people",
+    dislikes: "long lines and small hotel rooms"
+  },
+  {
+    name: "Chloe",
+    country: "France",
+    reason: "learning about Japanese art and design",
+    personality: "creative, stylish, and observant",
+    likes: "museums, coffee, and fashion",
+    dislikes: "fast food and bad coffee"
+  },
+  {
+    name: "Omar",
+    country: "Egypt",
+    reason: "seeing Japanese temples and castles",
+    personality: "curious, calm, and respectful",
+    likes: "history, architecture, and walking tours",
+    dislikes: "cold rain and getting lost"
+  },
+  {
+    name: "Ella",
+    country: "Finland",
+    reason: "experiencing Japanese nature",
+    personality: "quiet, kind, and thoughtful",
+    likes: "forests, hot springs, and simple food",
+    dislikes: "loud restaurants and humid weather"
+  },
+  {
+    name: "Mateo",
+    country: "Mexico",
+    reason: "trying Japanese food and culture",
+    personality: "funny, social, and adventurous",
+    likes: "food, soccer, and talking with local people",
+    dislikes: "strict schedules and bland food"
+  }
+];
+
+// Choose one persona when the page loads.
+// This persona stays the same for the whole conversation.
+const persona = personas[Math.floor(Math.random() * personas.length)];
+    
     let history = [];
     let recognition = null;
     let isListening = false;
