@@ -122,8 +122,7 @@
 
     let currentAudio = null;
 
-    // Change this number if students need more or less time.
-    // 3000 = 3 seconds after the student stops speaking.
+    // 3000 = wait 3 seconds after the student stops speaking
     const SPEECH_END_DELAY = 3000;
 
     function setStatus(text) {
@@ -181,12 +180,14 @@
           throw new Error("No tutor reply found.");
         }
 
-        addMessage("assistant", reply);
-
         history.push({ role: "user", content: userMessage });
         history.push({ role: "assistant", content: reply });
 
-        speakText(reply);
+        // Important:
+        // This prepares the voice first.
+        // The Tutor text appears when the audio starts.
+        await showTutorReplyWithVoice(reply);
+
       } catch (error) {
         console.error(error);
         addMessage("assistant", "Sorry, something went wrong.");
@@ -197,11 +198,18 @@
       }
     }
 
-    async function speakText(text) {
-      if (!text) return;
+    async function showTutorReplyWithVoice(text) {
+      let textShown = false;
+
+      function showTextOnce() {
+        if (!textShown) {
+          addMessage("assistant", text);
+          textShown = true;
+        }
+      }
 
       try {
-        setStatus("Creating voice...");
+        setStatus("Preparing voice...");
 
         if (currentAudio) {
           currentAudio.pause();
@@ -226,6 +234,7 @@
         currentAudio = new Audio(audioUrl);
 
         currentAudio.onplay = () => {
+          showTextOnce();
           setStatus("Speaking...");
         };
 
@@ -235,14 +244,22 @@
         };
 
         currentAudio.onerror = () => {
+          showTextOnce();
           setStatus("Audio playback error.");
           URL.revokeObjectURL(audioUrl);
         };
 
         await currentAudio.play();
+
+        // Backup: if onplay is slow, still show the text shortly after playback begins.
+        setTimeout(showTextOnce, 100);
+
       } catch (error) {
         console.error("TTS error:", error);
-        setStatus("Voice error.");
+
+        // If voice fails, still show the tutor text.
+        showTextOnce();
+        setStatus("Voice error. Text shown.");
       }
     }
 
