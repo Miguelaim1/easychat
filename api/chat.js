@@ -27,7 +27,7 @@ const { history = [], message, persona = {} } = req.body || {};
 
     // Tutor asks a question only every 5th tutor turn.
     // Change 5 to 6 or 7 for even fewer questions.
-    const allowTutorQuestion = assistantTurnCount % 5 === 0;
+    const allowTutorQuestion = assistantTurnCount % 4 === 0;
 
 const selectedPersona = {
   name: persona.name || "Sofia",
